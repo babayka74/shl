@@ -1,0 +1,35 @@
+options {
+	vwmlSrcPath="C:\Users\Oleg\projects\shl\examples\example1\vwml"
+	moduleName="Example1"
+}
+
+frame Auction {	
+	CroupierAssistant ias (
+		/* available commands which can be received from external world  */
+		PlayerCommands ias (leave join bet bets credit exit);
+		/* available commands which can be received from internal world */
+		InternalCommands ias (startNewAuction);
+		InternalCommand ias none;
+		/* read command */
+		Command ias nil;
+		CommandId ias nil;
+		PlayerId ias nil;
+
+		/* Updates player's bet */
+		UpdatePlayerBet ias (
+			RollbackBet ias (
+                        	(Croupier.LastPlayersBets (Croupier.LastPlayersBets~ CurrentPlayerBet~)Join)^
+				((Player PlayerId~)->Credit (((Player PlayerId~)->Credit~ (CurrentPlayerBet~) Last) Ew.DecreaseCredit~) Do)^
+			);
+			UpdatedBet ias 0;
+			CurrentPlayerBet ias nil;
+			PlayerCurrentCredit ias 0;
+			(Croupier.LastPlayersBets (Croupier.LastPlayersBets~ (CurrentPlayerBet~))Substruct)^
+			((Player PlayerId~)->Credit (((Player PlayerId~)->Credit~ (CurrentPlayerBet~) Last) Ew.IncreaseCredit~) Do)^
+			(AcceptPlayerBet.AcceptedBet UpdatedBet~)^
+			(AcceptPlayerBet.RollbackBet RollbackBet~)^
+			AcceptPlayerBet~ Exe
+			(AcceptPlayerBet.RollbackBet nil)^
+		);
+	);
+}
