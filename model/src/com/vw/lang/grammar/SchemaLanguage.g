@@ -67,7 +67,7 @@ import com.vw.lang.processor.context.builder.VWMLContextBuilder.ContextBunch;
 import com.vw.lang.processor.context.builder.VWMLContextBuilder.ContextBunchElement;
 
 import com.vw.lang.processor.model.builder.SHLModelBuilder;
-import com.vw.lang.generator.SHLCodeGenerator.ShlModuleStartProps;
+import com.vw.lang.generator.VWMLCodeGenerator.ShlModuleStartProps;
 
 // logger
 import org.apache.log4j.Logger;
@@ -110,6 +110,7 @@ package com.vw.lang.grammar;
 	private String lastProcessedComplexEntityId = null;	
 	private ShlModuleStartProps modProps = null;
 	private String currentFrameName = null;
+	private String rootFrameName = null;
 	// VWML exported
 	private VWMLContextBuilder vwmlContextBuilder = VWMLContextBuilder.instance();
 	private VWMLContextBuilder.ContextBunch lastProcessedContextBunch = null;
@@ -122,7 +123,15 @@ package com.vw.lang.grammar;
 
 	private static SHLModelBuilder shlModelBuilder = SHLModelBuilder.instance();
 	private static ICodeGenerator codeGenerator = null;
+	private static int includeDepth = 0;
 	
+	public String getRootFrameName() {
+		return rootFrameName;
+	}
+
+	public void setRootFrameName(String rootFrameName) {
+		this.rootFrameName = rootFrameName;
+	}
 	
 	public String getCurrentFrameName() {
 		return currentFrameName;
@@ -142,6 +151,8 @@ package com.vw.lang.grammar;
 	
 	protected void processInclude(String file) throws RecognitionException {
 		try {
+			includeDepth++;
+			includeDepth--;
 		}
 		catch(Exception e) {
 			rethrowSHLExceptionAsRecognitionException(e);
@@ -252,6 +263,7 @@ package com.vw.lang.grammar;
     					logger.debug("Context '" + c + "' is going to be declared");
     				}    				
     				codeGenerator.declareContext(c);
+    				codeGenerator.linkContextAndBunch(c, bunch);
     				if (logger.isDebugEnabled()) {
     					logger.debug("Context '" + c + "' was declared");
     				}
@@ -536,16 +548,18 @@ package com.vw.lang.grammar;
 	/*
 	*  **************************************** SHL functionality **************************************************
 	*/
-	protected void processSHLFrame(Object frameId) throws RecognitionException {
-		setCurrentFrameName((String)frameId);
-		// since frame is regular VWML context we can apply context related operations
-		createLastProcessedContextBunch();
-		addBunchElementToLastProcessedContextBunch(frameId);
-		handleLastProcessedContextBunch();
+	protected void startProcessSHLFrame() throws RecognitionException {
+		VWMLContextBuilder.ContextBunch bunch = (VWMLContextBuilder.ContextBunch)vwmlContextBuilder.peek();
+		setCurrentFrameName(bunch.bunchAsString());
+		if (getRootFrameName() == null) {
+			setRootFrameName(getCurrentFrameName());
+		}		
 		declareAbsoluteContextByIASRelation();
+    		complexEntityStartAssembling();		
 	}
 	
-	protected void generateSHL2VWMLFrameCode() throws RecognitionException {
+	protected void finishProcessSHLFrame() throws RecognitionException {
+	        complexEntityStopAssembling();
 		handleProcessedAbsoluteContextbyIASRelation();
 	}
 }
@@ -617,7 +631,10 @@ filedef
     : props? (include (include)*)? shl_body EOF {
                              	try {
                              		moduleInProgress = false;
-           				codeGenerator.generate(getModuleProps());
+                             		if (includeDepth == 0) {
+                             			((ShlModuleStartProps)getModuleProps()).getFrameCodeGeneratorProps().setGenerateFromFrame(getRootFrameName());
+           					codeGenerator.generate(getModuleProps());
+           				}
            				codeGenerator.finishModule(getModuleProps());
                              	}
                              	catch(Exception e) {
@@ -666,12 +683,11 @@ schema
     ;
 
 frame
-    : 'frame' ID {
-    			processSHLFrame($ID.getText());
+    : 'frame' bunch_of_entity_decls {
+    			startProcessSHLFrame();
                  } body
                  {
-                 	// generates VWML code
-                 	generateSHL2VWMLFrameCode();
+                 	finishProcessSHLFrame();
                  }
     ;
     

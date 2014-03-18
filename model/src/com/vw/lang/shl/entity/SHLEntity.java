@@ -5,6 +5,7 @@ import com.vw.lang.sink.java.VWMLObject;
 import com.vw.lang.sink.java.link.VWMLLinkIncrementalIterator;
 import com.vw.lang.sink.java.operations.VWMLOperation;
 import com.vw.lang.sink.java.operations.VWMLOperations;
+import com.vw.lang.sink.utils.IEntityNameBuilderVisitor;
 
 /**
  * Specific type of entity related to SHL language
@@ -20,6 +21,7 @@ public class SHLEntity extends VWMLObject {
 	private boolean isLifeTerm = false;
 	private boolean isLifeTermAsSource = false;
 	private VWMLOperations associatedOperations = new VWMLOperations("__associated_operation__" + this);
+	private IEntityNameBuilderVisitor nameBuilderVisitor = null;
 	
 	public SHLEntity(Object hashId) {
 		super(hashId);
@@ -42,6 +44,14 @@ public class SHLEntity extends VWMLObject {
 		return false;
 	}
 	
+	public IEntityNameBuilderVisitor getNameBuilderVisitor() {
+		return nameBuilderVisitor;
+	}
+
+	public void setNameBuilderVisitor(IEntityNameBuilderVisitor nameBuilderVisitor) {
+		this.nameBuilderVisitor = nameBuilderVisitor;
+	}
+
 	/**
 	 * Adds operation to set of associative operations
 	 * @param op

@@ -2,6 +2,10 @@ package com.vw.lang.generator;
 
 import org.apache.log4j.Logger;
 
+import com.vw.lang.generator.frame.SHL2VWMLCodeGeneratorWriter;
+import com.vw.lang.generator.frame.SHL2VWMLFrameCodeGenerator;
+import com.vw.lang.generator.writer.string.SHL2VWMLCodeGeneratorStringWriter;
+import com.vw.lang.processor.context.builder.VWMLContextBuilder;
 import com.vw.lang.shl.context.SHLContext;
 import com.vw.lang.shl.entity.SHLEntity;
 import com.vw.lang.shl.entity.SHLEntityBuilder;
@@ -18,39 +22,29 @@ import com.vw.lang.sink.utils.EntityWalker;
  * @author Oleg
  *
  */
-public class SHLCodeGenerator implements ICodeGenerator {
+public class VWMLCodeGenerator implements ICodeGenerator {
 
 	public static class CodeGeneratorProps  {
-		private int offset;
-
-		public CodeGeneratorProps(int offset) {
-			super();
-			this.offset = offset;
-		}
-
-		public int getOffset() {
-			return offset;
-		}
-
-		public void setOffset(int offset) {
-			this.offset = offset;
-		}
 	}
 	
 	public static class FrameCodeGeneratorProps extends CodeGeneratorProps {
-		private Object frameId;
+		private String generateFromFrame = null;
+		private String delimiter = "\t";
 
-		public FrameCodeGeneratorProps(int offset, Object frameId) {
-			super(offset);
-			this.frameId = frameId;
+		public String getGenerateFromFrame() {
+			return generateFromFrame;
 		}
-
-		public Object getFrameId() {
-			return frameId;
+		
+		public void setGenerateFromFrame(String generateFromFrame) {
+			this.generateFromFrame = generateFromFrame;
 		}
-
-		public void setFrameId(Object frameId) {
-			this.frameId = frameId;
+		
+		public String getDelimiter() {
+			return delimiter;
+		}
+		
+		public void setDelimiter(String delimiter) {
+			this.delimiter = delimiter;
 		}
 	}
 	
@@ -60,15 +54,12 @@ public class SHLCodeGenerator implements ICodeGenerator {
 			NONE, FRAME, SCHEMA
 		}
 		
-		private String vwmlSrcPath;
-		private String vwmlModuleName;
-		private FrameCodeGeneratorProps frameCodeGeneratorProps = null;
+		private String vwmlSrcPath = null;
+		private String vwmlModuleName = null;
+		private SHL2VWMLCodeGeneratorWriter writer = null;
+		private FrameCodeGeneratorProps frameCodeGeneratorProps = new FrameCodeGeneratorProps();
 		private GENERATE_CODE_FOR generateCodeFor = GENERATE_CODE_FOR.NONE;
 
-		public static FrameCodeGeneratorProps buildFrameCodeGeneratorProps(int offset, Object frameId) {
-			return new FrameCodeGeneratorProps(offset, frameId);
-		}
-		
 		public String getVwmlSrcPath() {
 			return vwmlSrcPath;
 		}
@@ -100,11 +91,30 @@ public class SHLCodeGenerator implements ICodeGenerator {
 		public void setGenerateCodeFor(GENERATE_CODE_FOR generateCodeFor) {
 			this.generateCodeFor = generateCodeFor;
 		}
+
+		public SHL2VWMLCodeGeneratorWriter getWriter() {
+			return writer;
+		}
+
+		public void setWriter(SHL2VWMLCodeGeneratorWriter writer) {
+			this.writer = writer;
+		}
 	}
 	private SHLContextsRepository shlContextRepository = SHLContextsRepository.instance();
+	private SHL2VWMLFrameCodeGenerator frameCodeGenerator = SHL2VWMLFrameCodeGenerator.instance(this);
+	private SHL2VWMLCodeGeneratorStringWriter writer = new SHL2VWMLCodeGeneratorStringWriter();
+
 	// internal logger
-	private static Logger logger = Logger.getLogger(SHLCodeGenerator.class);
+	private static Logger logger = Logger.getLogger(VWMLCodeGenerator.class);
 	
+	public SHLContextsRepository getShlContextRepository() {
+		return shlContextRepository;
+	}
+
+	public void setShlContextRepository(SHLContextsRepository shlContextRepository) {
+		this.shlContextRepository = shlContextRepository;
+	}
+
 	@Override
 	public Object getLastLink() {
 		return null;
@@ -119,6 +129,11 @@ public class SHLCodeGenerator implements ICodeGenerator {
 	public StartModuleProps buildProps() {
 		ShlModuleStartProps props = new ShlModuleStartProps();
 		props.setCodeGenerator(this);
+		try {
+			writer.init(null);
+		} catch (Exception e) {
+		}
+		props.setWriter(writer);
 		return props;
 	}
 
@@ -142,6 +157,11 @@ public class SHLCodeGenerator implements ICodeGenerator {
 
 	@Override
 	public void generate(StartModuleProps props) throws Exception {
+		if (props == null) {
+			throw new Exception("module's properties can't be null");
+		}
+		ShlModuleStartProps modProps = (ShlModuleStartProps)props;
+		frameCodeGenerator.generate(modProps);
 	}
 
 	@Override
@@ -207,6 +227,12 @@ public class SHLCodeGenerator implements ICodeGenerator {
 		EntityWalker.Relation rel = (EntityWalker.Relation)id;
 		for(String context : contexts) {
 			SHLContext shlContext = acquireContext(context);
+			SHLEntity e = shlContext.findEntity(rel.getObj());
+			if (e != null) {
+				if (e.getLink().getParent() != null) {
+					e.getLink().getParent().unlink(e);
+				}
+			}
 			shlContext.unAssociateEntity(rel.getObj());
 			if (logger.isDebugEnabled()) {
 				logger.debug("Entity '" + rel.getObj() + "' removed from context '" + context + "'");
@@ -249,6 +275,14 @@ public class SHLCodeGenerator implements ICodeGenerator {
 	}
 
 	@Override
+	public void linkContextAndBunch(Object contextId, Object bunch) {
+		SHLContext context = shlContextRepository.get(contextId);
+		if (context != null) {
+			context.associateWithBunch((VWMLContextBuilder.ContextBunch)bunch);
+		}
+	}
+	
+	@Override
 	public void linkObjects(Object id, Object linkedObjId, String linkingContext, String activeContext, Object uniqId) {
 		SHLContext shlContext = acquireContext(linkingContext);
 		SHLEntity entityLinking = shlContext.findEntity(id);
@@ -274,6 +308,7 @@ public class SHLCodeGenerator implements ICodeGenerator {
 		SHLEntity entityInterpreting = shlContext.findEntity(interpretingObjId);
 		if (entityInterpreted != null && entityInterpreting != null) {
 			entityInterpreted.setInterpreting(entityInterpreting);
+			shlContext.setIasRelation(entityInterpreting);
 		}
 	}
 

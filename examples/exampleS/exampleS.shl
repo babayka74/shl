@@ -1,0 +1,25 @@
+options {
+	vwmlSrcPath="C:\Users\Oleg\projects\shl\examples\exampleS\vwml"
+	moduleName="ExampleS"
+}
+
+frame ExampleS {
+	Assistant ias (
+		ItsCommand ias cmd;
+	);	
+	CroupierAssistant ias (
+		(Alfa true) ias (
+			(Beta true) ias (beta1);
+		);
+		SpecificCommands ias (
+			TestCommands ias (test1 test2 Assistant.ItsCommand.cmd (Alfa true).(Beta true).beta1);
+		);
+		/* available commands which can be received from external world  */
+		PlayerCommands ias (leave join bet bets credit exit);
+		/* available commands which can be received from internal world */
+		InternalCommands ias (startNewAuction SpecificCommands.TestCommands.test1);
+		InternalCommand ias none;
+		/* read command */
+		Command ias nil;
+	);
+}

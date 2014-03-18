@@ -28,6 +28,7 @@ public class SHLComplexEntity extends SHLEntity {
 	public String buildReadableId() {
 		if (getReadableId() == null) {
 			ComplexEntityNameBuilder ce = ComplexEntityNameBuilder.instance();
+			ce.setNameBuilderVisitor(getNameBuilderVisitor());
 			assembleReadableId(ce, this);
 			setReadableId(ce.build());
 			ce.clear();

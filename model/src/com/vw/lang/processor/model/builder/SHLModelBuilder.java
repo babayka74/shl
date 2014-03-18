@@ -5,10 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
 import org.apache.log4j.Logger;
 
 import com.vw.common.Debuggable;
-import com.vw.lang.generator.SHLCodeGenerator;
+import com.vw.lang.generator.VWMLCodeGenerator;
+import com.vw.lang.grammar.SchemaLanguageLexer;
+import com.vw.lang.grammar.SchemaLanguageParser;
 import com.vw.lang.sink.ICodeGenerator;
 import com.vw.lang.sink.ICodeGenerator.StartModuleProps;
 
@@ -151,7 +156,7 @@ public class SHLModelBuilder extends Debuggable {
 	 * @return
 	 */
 	public ICodeGenerator getCodeGenerator() {
-		return new SHLCodeGenerator();
+		return new VWMLCodeGenerator();
 	}
 
 	/**
@@ -214,25 +219,23 @@ public class SHLModelBuilder extends Debuggable {
 				shlFilePath = projectPath + "/" + shlFilePath;
 			}
 		}
-/*		
-        VirtualWorldModelingLanguageLexer lex = new VirtualWorldModelingLanguageLexer(new ANTLRFileStream(vwmlFilePath, "UTF8"));
+        SchemaLanguageLexer lex = new SchemaLanguageLexer(new ANTLRFileStream(shlFilePath, "UTF8"));
         CommonTokenStream tokens = new CommonTokenStream(lex);
-        VirtualWorldModelingLanguageParser g = new VirtualWorldModelingLanguageParser(tokens);
+        SchemaLanguageParser g = new SchemaLanguageParser(tokens);
         try {
             g.filedef();
     		if (logger.isInfoEnabled()) {
-    			logger.info("compiled '" +  vwmlFilePath + "'... OK");
+    			logger.info("compiled '" +  shlFilePath + "'... OK");
     		}
         }
-        catch (VirtualWorldModelingLanguageParser.VWMLCodeGeneratorRecognitionException e) {
-        	logger.error("couldn't compile '" + vwmlFilePath + "'; error is '" + e.getCause().getMessage() + "'");
+        catch (SchemaLanguageParser.SHLCodeGeneratorRecognitionException e) {
+        	logger.error("couldn't compile '" + shlFilePath + "'; error is '" + e.getCause().getMessage() + "'");
             throw e;
         }
         catch (RecognitionException e) {
-        	logger.error("couldn't compile '" + vwmlFilePath + "'; error is '" + e.getMessage() + "'; position '" + e.line + ":" + e.charPositionInLine + "'; token '" + ((e.token != null) ? e.token.getText() : "undefined" + "'"));
+        	logger.error("couldn't compile '" + shlFilePath + "'; error is '" + e.getMessage() + "'; position '" + e.line + ":" + e.charPositionInLine + "'; token '" + ((e.token != null) ? e.token.getText() : "undefined" + "'"));
             throw e;
-        }
-*/        
+        } 
 	}
 	
 	/**

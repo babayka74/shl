@@ -33,8 +33,12 @@ public final class SHL {
 		
 		public void run(VWMLArgs args) throws Exception {
 			String filePath = args.getArguments().get(Operation.ARGS.SHLFILE.ordinal());
-			SHLModelBuilder.instance().getProjectProps().addProperty(SHLModelBuilder.COMPILATION_OPTIONS.OUTDIR.toValue(), args.getOutVwmlDir());
-			SHLModelBuilder.instance().getProjectProps().addProperty(SHLModelBuilder.COMPILATION_OPTIONS.OUTFILE.toValue(), args.getOutVwml());
+			if (args.getOutVwmlDir() != null) {
+				SHLModelBuilder.instance().getProjectProps().addProperty(SHLModelBuilder.COMPILATION_OPTIONS.OUTDIR.toValue(), args.getOutVwmlDir());
+			}
+			if (args.getOutVwml() != null) {
+				SHLModelBuilder.instance().getProjectProps().addProperty(SHLModelBuilder.COMPILATION_OPTIONS.OUTFILE.toValue(), args.getOutVwml());
+			}
 			// the module's props are set during compilation phase (see grammar file, term 'filedef')
 			SHLModelBuilder.instance().compile(filePath);
 		}
