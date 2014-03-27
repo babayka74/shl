@@ -12,8 +12,11 @@ frame Auction {
 		InternalCommand ias none;
 		/* read command */
 		Command ias nil;
-		CommandId ias nil;
+		CommandId ias Command~ Exe;
 		PlayerId ias nil;
+		KKK ias ();
+
+		AAA ias (CommandId~ Exe)~;
 
 		/* Updates player's bet */
 		UpdatePlayerBet ias (
@@ -31,5 +34,7 @@ frame Auction {
 			AcceptPlayerBet~ Exe
 			(AcceptPlayerBet.RollbackBet nil)^
 		);
+
+		source lifeterm = UpdatePlayerBet~ Exe
 	);
 }

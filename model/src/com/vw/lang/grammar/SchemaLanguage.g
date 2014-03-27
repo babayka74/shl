@@ -857,10 +857,10 @@ oplist
     : opclist       {
     			if (lastProcessedEntity != null && codeGenerator != null) { 
     				lastProcessedEntityAsTerm = true;
+    				lastProcessedEntity.setParentLink(entityWalker.peek());
     				VWMLContextBuilder.Contexts contexts = vwmlContextBuilder.buildContext();
-    				for(String c = contexts.first(); c != null; c = contexts.next()) {
-    					codeGenerator.associateOperation(lastProcessedEntity, $opclist.text, c);
-    				}
+    				codeGenerator.associateOperation(lastProcessedEntity, $opclist.text, contexts.first());
+    				lastProcessedEntity.setParentLink(null);
     			} 
     		    }
     ;

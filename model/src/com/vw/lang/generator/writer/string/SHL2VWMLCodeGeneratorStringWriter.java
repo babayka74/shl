@@ -51,9 +51,9 @@ public class SHL2VWMLCodeGeneratorStringWriter extends SHL2VWMLCodeGeneratorWrit
 		String offset = Utils.generateStrOffsetPattern(Utils.getOffsetPattern(), delimIndex);
 		String suffix = "";
 		if (context.getLink().getLinkedObjectsOnThisTime() != 0) { 
-			suffix = ")";
+			suffix = offset + ")";
 		}
-		contextCode += "\r\n" + offset + suffix + ";";
+		contextCode += suffix + ";" + "\r\n";
 		contextsCodeByIndex.put(delimIndex, contextCode);
 		code.append(contextCode);
 		contextCode = "";
@@ -61,7 +61,7 @@ public class SHL2VWMLCodeGeneratorStringWriter extends SHL2VWMLCodeGeneratorWrit
 
 	@Override
 	public void writeEntity(SHLContext context, SHLEntity entity, int delimIndex) throws Exception {
-		String entityAsStr = entity.buildReadableId();
+		String entityAsStr = entity.asVWMLCode("", true);
 		contextCode += entityAsStr;
 	}
 }

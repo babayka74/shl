@@ -1,5 +1,9 @@
 package com.vw.lang.generator;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.log4j.Logger;
 
 import com.vw.lang.generator.frame.SHL2VWMLCodeGeneratorWriter;
@@ -9,6 +13,7 @@ import com.vw.lang.processor.context.builder.VWMLContextBuilder;
 import com.vw.lang.shl.context.SHLContext;
 import com.vw.lang.shl.entity.SHLEntity;
 import com.vw.lang.shl.entity.SHLEntityBuilder;
+import com.vw.lang.shl.entity.SHLTerm;
 import com.vw.lang.shl.repositories.SHLContextsRepository;
 import com.vw.lang.sink.ICodeGenerator;
 import com.vw.lang.sink.java.link.AbstractVWMLLinkVisitor;
@@ -103,6 +108,9 @@ public class VWMLCodeGenerator implements ICodeGenerator {
 	private SHLContextsRepository shlContextRepository = SHLContextsRepository.instance();
 	private SHL2VWMLFrameCodeGenerator frameCodeGenerator = SHL2VWMLFrameCodeGenerator.instance(this);
 	private SHL2VWMLCodeGeneratorStringWriter writer = new SHL2VWMLCodeGeneratorStringWriter();
+	
+	private EntityWalker.Relation lastRelationForOperationAssociation = null;
+	private Map<EntityWalker.Relation, SHLTerm> rel2TermLink = new HashMap<EntityWalker.Relation, SHLTerm>();
 
 	// internal logger
 	private static Logger logger = Logger.getLogger(VWMLCodeGenerator.class);
@@ -161,6 +169,8 @@ public class VWMLCodeGenerator implements ICodeGenerator {
 			throw new Exception("module's properties can't be null");
 		}
 		ShlModuleStartProps modProps = (ShlModuleStartProps)props;
+		lastRelationForOperationAssociation = null;
+		rel2TermLink.clear();
 		frameCodeGenerator.generate(modProps);
 	}
 
@@ -295,10 +305,35 @@ public class VWMLCodeGenerator implements ICodeGenerator {
 	@Override
 	public void associateOperation(Object id, String op, String activeContext) {
 		SHLContext shlContext = acquireContext(activeContext);
-		SHLEntity entity = shlContext.findEntity(id);
+		shlContext.setDontActivateStrategyInCaseUndefinedEntity(true);
+		SHLEntity entity = shlContext.findEntity(((EntityWalker.Relation)id).getObj());
+		shlContext.setDontActivateStrategyInCaseUndefinedEntity(false);
 		if (entity != null) {
-			entity.addOperation(new VWMLOperation(VWMLOperationsCode.fromValue(op)));
+			if (id != lastRelationForOperationAssociation && lastRelationForOperationAssociation != null) {
+				rel2TermLink.remove(lastRelationForOperationAssociation);
+			}
+			SHLEntity term = rel2TermLink.get(id);
+			if (term == null) {
+				term = SHLEntityBuilder.buildTerm(UUID.randomUUID().toString() + "_" + ((EntityWalker.Relation)id).getObj(), shlContext.getContextName(), shlContext, entity);
+				rel2TermLink.put((EntityWalker.Relation)id, (SHLTerm)term);
+				EntityWalker.Relation parentRel = (EntityWalker.Relation)((EntityWalker.Relation)id).getParentLink();
+				if (parentRel != null) {
+					if (((EntityWalker.Relation)id).getRelation() == EntityWalker.REL.LINK) {
+						SHLEntity entityLinking = shlContext.findEntity(parentRel.getObj());
+						entityLinking.unlink(entity);
+						entityLinking.link(term);
+					}
+					else
+					if (((EntityWalker.Relation)id).getRelation() == EntityWalker.REL.ASSOCIATION) {
+						SHLEntity interpreted = entity.getInterpreted();
+						interpreted.setInterpreting(term);
+						shlContext.setIasRelation(term);
+					}
+				}
+			}
+			term.addOperation(new VWMLOperation(VWMLOperationsCode.fromValue(op)));
 		}
+		lastRelationForOperationAssociation = (EntityWalker.Relation)id;
 	}
 
 	@Override

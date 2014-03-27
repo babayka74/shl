@@ -8,11 +8,12 @@ frame ExampleS {
 		ItsCommand ias cmd;
 	);	
 	CroupierAssistant ias (
-		(Alfa true) ias (
-			(Beta true) ias (beta1);
+		(Alfa true),(Gama false) ias (
+			(Beta true) ias (aaa beta1~ Exe);
+			(Beta false) ias (beta2 (Alfa true)->(Beta true)->aaa);
 		);
 		SpecificCommands ias (
-			TestCommands ias (test1 test2 Assistant.ItsCommand.cmd (Alfa true).(Beta true).beta1);
+			TestCommands ias (test1 test2 Assistant.ItsCommand.cmd (t1 t2) (Alfa true).(Beta true).beta1 (t4 t3) (Gama false).(Beta false).beta2);
 		);
 		/* available commands which can be received from external world  */
 		PlayerCommands ias (leave join bet bets credit exit);

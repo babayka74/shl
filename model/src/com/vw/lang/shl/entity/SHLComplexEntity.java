@@ -36,6 +36,11 @@ public class SHLComplexEntity extends SHLEntity {
 		return getReadableId();
 	}
 	
+	@Override
+	public String asVWMLCode(String prefix, boolean start) {
+		return prepareVWMLCode(prefix, start);
+	}
+	
 	protected void assembleReadableId(ComplexEntityNameBuilder ce, SHLEntity entity) {
 		ce.startProgress();
 		VWMLLinkIncrementalIterator it = entity.getLink().acquireLinkedObjectsIterator();
@@ -50,5 +55,54 @@ public class SHLComplexEntity extends SHLEntity {
 			}
 		}
 		ce.stopProgress();
+	}
+	
+	protected String prepareVWMLCode(String prefix, boolean firstTime) {
+		String str = prefix;
+		if (firstTime) {
+			if (getNameBuilderVisitor() != null && !isHideAdornments()) {
+				str += getNameBuilderVisitor().injectionOnStart(this);
+				str += getNameBuilderVisitor().injectionOnParentStart(this);
+			}
+		}
+		else {
+			if (getNameBuilderVisitor() != null && !isHideAdornments()) {
+				str += getNameBuilderVisitor().injectionOnChildStart(this);
+			}
+		}
+		if (!isHideAdornments()) {
+			str += "(";
+		}
+		VWMLLinkIncrementalIterator it = getLink().acquireLinkedObjectsIterator();
+		if (it != null) {
+			for(SHLEntity le = (SHLEntity)getLink().peek(it); le != null; le = (SHLEntity)getLink().peek(it)) {
+				le.setNameBuilderVisitor(getNameBuilderVisitor());
+				if (le.isMarkedAsComplexEntity()) {
+					str = ((SHLComplexEntity)le).prepareVWMLCode(str, false);
+				}
+				else {
+					str = le.asVWMLCode(str, false) + (it.isCorrect() ? " " : "");
+				}
+				le.setNameBuilderVisitor(null);
+			}
+		}		
+		if (firstTime) {
+			if (getNameBuilderVisitor() != null && !isHideAdornments()) {
+				str += getNameBuilderVisitor().injectionOnParentFinish(this);
+				str += getNameBuilderVisitor().injectionOnFinish(this);
+			}
+		}
+		else {
+			if (getNameBuilderVisitor() != null && !isHideAdornments()) {
+				str += getNameBuilderVisitor().injectionOnChildFinish(this);
+			}
+		}
+		if (!isHideAdornments()) {
+			str += ")";
+		}
+		else {
+			str += "\r\n";
+		}
+		return str;
 	}
 }

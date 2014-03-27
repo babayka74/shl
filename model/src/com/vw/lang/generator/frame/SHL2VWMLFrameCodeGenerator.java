@@ -101,7 +101,7 @@ public class SHL2VWMLFrameCodeGenerator {
 		for(VWMLObject objAsCtx : ctx.getLink().getLinkedObjects()) {
 			generateVWMLCode((SHLContext)objAsCtx, props, delimIndex + 1, auxCache);
 		}
-		entity(ctx, props, delimIndex + 1);
+		entity(ctx, props, delimIndex);
 		endContext(ctx, props, delimIndex);
 	}
 	
@@ -123,11 +123,15 @@ public class SHL2VWMLFrameCodeGenerator {
 		if (iasRelation == null) {
 			throw new Exception("Context '" + ctxAsStr + "' doesn't have IAS relation");
 		}
-		nameBuilderVisitor.setStartingDelimIndex(delimIndex + 1);
+		nameBuilderVisitor.setStartingDelimIndex(delimIndex);
 		iasRelation.setNameBuilderVisitor(nameBuilderVisitor);
 		if (props.getWriter() != null) {
 			if (!(ctx.getLink().getLinkedObjectsOnThisTime() != 0 && iasRelation.getLink().getLinkedObjectsOnThisTime() == 0)) {
+				if (ctx.getLink().getLinkedObjectsOnThisTime() != 0) {
+					iasRelation.setHideAdornments(true);
+				}
 				props.getWriter().writeEntity(ctx, iasRelation, delimIndex + 1);
+				iasRelation.setHideAdornments(false);
 			}
 		}
 	}	

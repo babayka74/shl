@@ -22,7 +22,7 @@ public class StrategyInstantiateEntityWhenUndefined extends StrategyForUndefined
 		SHLEntity entity = SHLEntityBuilder.buildSimpleEntity(entityId, context.getContextName(), context);
 		context.associateEntity(entity);
 		if (logger.isDebugEnabled()) {
-			logger.debug("The entity '" + entityId + "' detected us undefined and defined on context '" + context.getContextName() + "'");
+			logger.debug("The entity '" + entityId + "' detected as undefined and defined on context '" + context.getContextName() + "'");
 		}
 		return entity;
 	}
@@ -30,7 +30,7 @@ public class StrategyInstantiateEntityWhenUndefined extends StrategyForUndefined
 	@Override
 	public SHLContext undefinedContextEncountered(Object contextId) {
 		if (logger.isDebugEnabled()) {
-			logger.debug("The context '" + contextId + "' detected us undefined and created");
+			logger.debug("The context '" + contextId + "' detected as undefined and created");
 		}
 		return SHLContextsRepository.instance().createContextIfNotExists(contextId);
 	}

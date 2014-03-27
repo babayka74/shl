@@ -29,4 +29,17 @@ public class SHLEntityBuilder {
 	public static SHLEntity buildComplexEntity(Object id, Object hashId, SHLContext context) {
 		return new SHLComplexEntity(context, hashId, id, null);
 	}
+	
+	/**
+	 * Builds SHL term
+	 * @param id
+	 * @param hashId
+	 * @param context
+	 * @return
+	 */
+	public static SHLTerm buildTerm(Object id, Object hashId, SHLContext context, SHLEntity linkedEntity) {
+		SHLTerm t  = new SHLTerm(context, hashId, id, null);
+		t.setLinkedEntity(linkedEntity);
+		return t;
+	}
 }

@@ -20,6 +20,7 @@ public class SHLContext extends VWMLObject {
 	private String contextName;
 	private VWMLContextBuilder.ContextBunch bunch;
 	private SHLEntity iasRelation;
+	private boolean dontActivateStrategyInCaseUndefinedEntity = false;
 	private Map<Object, SHLEntity> entities = new HashMap<Object, SHLEntity>();
 	
 	public SHLContext(Object hashId) {
@@ -55,6 +56,10 @@ public class SHLContext extends VWMLObject {
 		e.setContext(this);
 	}
 	
+	public void setDontActivateStrategyInCaseUndefinedEntity(boolean dontActivateStrategy) {
+		this.dontActivateStrategyInCaseUndefinedEntity = dontActivateStrategy;
+	}
+
 	public SHLEntity getEntityFromContext(Object id) {
 		return entities.get(id);
 	}
@@ -101,7 +106,9 @@ public class SHLContext extends VWMLObject {
 				e = ctx.findEntityEx(((String)id).substring(((String)id).lastIndexOf(".") + 1), id);
 			}
 			else {
-				ctx = StrategyFactory.getStratgeyForUndefinedEntities().undefinedContextEncountered(contextId);
+				if (!dontActivateStrategyInCaseUndefinedEntity) {
+					ctx = StrategyFactory.getStratgeyForUndefinedEntities().undefinedContextEncountered(contextId);
+				}
 				if (ctx != null) {
 					e = ctx.findEntityEx(((String)id).substring(((String)id).lastIndexOf(".") + 1), id);
 				}
@@ -118,7 +125,7 @@ public class SHLContext extends VWMLObject {
 				e = ctx.getEntityFromContext(id);
 			}
 		}
-		if (e == null) {
+		if (e == null && !dontActivateStrategyInCaseUndefinedEntity) {
 			e = StrategyFactory.getStratgeyForUndefinedEntities().undefinedEntityEncountered(id, this);
 		}
 		return e;

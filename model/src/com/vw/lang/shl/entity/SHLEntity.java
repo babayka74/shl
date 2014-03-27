@@ -17,11 +17,14 @@ import com.vw.lang.sink.utils.IEntityNameBuilderVisitor;
 public class SHLEntity extends VWMLObject {
 
 	private SHLEntity interpreting;
+	private SHLEntity interpreted;
 	private SHLContext context;
 	private boolean isLifeTerm = false;
 	private boolean isLifeTermAsSource = false;
 	private VWMLOperations associatedOperations = new VWMLOperations("__associated_operation__" + this);
 	private IEntityNameBuilderVisitor nameBuilderVisitor = null;
+	// used during code generation phase
+	private boolean hideAdornments = false;
 	
 	public SHLEntity(Object hashId) {
 		super(hashId);
@@ -52,6 +55,22 @@ public class SHLEntity extends VWMLObject {
 		this.nameBuilderVisitor = nameBuilderVisitor;
 	}
 
+	public VWMLOperations getAssociatedOperations() {
+		return associatedOperations;
+	}
+
+	public void setAssociatedOperations(VWMLOperations associatedOperations) {
+		this.associatedOperations = associatedOperations;
+	}
+
+	public boolean isHideAdornments() {
+		return hideAdornments;
+	}
+
+	public void setHideAdornments(boolean hideAdornments) {
+		this.hideAdornments = hideAdornments;
+	}
+
 	/**
 	 * Adds operation to set of associative operations
 	 * @param op
@@ -72,6 +91,15 @@ public class SHLEntity extends VWMLObject {
 		if (this.getLink().getLinkOperationVisitor() != null) {
 			this.getLink().getLinkOperationVisitor().removeOperationFromAssociation(this, op);
 		}
+	}
+	
+	/**
+	 * Returns 'true' in case if operation in term's list
+	 * @param op
+	 * @return
+	 */
+	public boolean operationInList(VWMLOperation op) {
+		return associatedOperations.inList(op);
 	}
 	
 	/**
@@ -117,6 +145,15 @@ public class SHLEntity extends VWMLObject {
 
 	public void setInterpreting(SHLEntity interpreting) {
 		this.interpreting = interpreting;
+		interpreting.setInterpreted(this);
+	}
+
+	public SHLEntity getInterpreted() {
+		return interpreted;
+	}
+
+	public void setInterpreted(SHLEntity interpreted) {
+		this.interpreted = interpreted;
 	}
 
 	/**
@@ -130,5 +167,9 @@ public class SHLEntity extends VWMLObject {
 	@Override
 	public String buildReadableId() {
 		return getReadableId();
+	}
+	
+	public String asVWMLCode(String prefix, boolean start) {
+		return prefix + (String)getId();
 	}
 }
